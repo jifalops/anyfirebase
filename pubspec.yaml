@@ -1,5 +1,5 @@
 name: anyfirebase
-description: A new Flutter package project.
+description: Easily use Firestore or FirebaseDatabase with the same syntax.
 version: 0.0.1
 author:
 homepage:
