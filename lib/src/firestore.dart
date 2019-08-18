@@ -66,7 +66,7 @@ class FirestoreDatabase extends Database {
         }
       });
 
-  /// Does not work with collections.
+  /// Deletes an entire document.
   @override
   Future<void> delete(String path) => db.document(path).delete();
 

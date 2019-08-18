@@ -58,8 +58,10 @@ abstract class Database implements _BasicOperations {
 /// Data at a database location.
 class Data {
   const Data(this.path, this.value);
-  final String path;
+
+  /// May be `null`.
   final Map<String, dynamic> value;
+  final String path;
   String get id => path.substring(path.lastIndexOf(Database.pathSep) + 1);
   String get parent => path.substring(0, path.lastIndexOf(Database.pathSep));
 }
