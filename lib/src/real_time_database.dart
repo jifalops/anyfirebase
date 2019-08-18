@@ -1,7 +1,8 @@
 import 'package:firebase_database/firebase_database.dart' as rt;
 import 'database.dart';
 
-Map<String, dynamic> _cast(dynamic value) => Map<String, dynamic>.from(value);
+Map<String, dynamic> _cast(dynamic value) =>
+    value == null ? null : Map<String, dynamic>.from(value);
 
 class RealTimeDatabase extends Database {
   const RealTimeDatabase();
@@ -10,7 +11,7 @@ class RealTimeDatabase extends Database {
   rt.DatabaseReference get db => rt.FirebaseDatabase.instance.reference();
 
   @override
-  Stream<Data> stream(String path, {bool filterNull = true}) {
+  Stream<Data> stream(String path, {bool filterNull = false}) {
     return filterNull
         ? db
             .child(path)
@@ -39,13 +40,13 @@ class RealTimeDatabase extends Database {
   @override
   Future<void> batchWrite(BatchHandler handler) => handler(_RtdbWriteBatch(db));
 
-  Future<void> create(Data data) => transact(data.path, (existingData) async {
-        if (existingData.value == null) {
-          return data;
-        } else {
-          throw Exception('Data already exists at ${data.path}');
-        }
-      });
+  Future<void> create(Data data) async {
+    if (await exists(data.path)) {
+      throw Exception('Data already exists at ${data.path}');
+    } else {
+      write(data);
+    }
+  }
 
   @override
   Future<void> delete(String path) => db.child(path).remove();

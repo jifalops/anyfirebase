@@ -15,7 +15,8 @@ class FirestoreDatabase extends Database {
   /// Read and write across documents atomically.
   Future<void> transact(TransactionHandler handler,
           {Duration timeout = const Duration(seconds: 5)}) =>
-      db.runTransaction((tx) => handler(_FirestoreTransaction(db, tx)),
+      db.runTransaction(
+          (tx) async => await handler(_FirestoreTransaction(db, tx)),
           timeout: timeout);
 
   @override
@@ -23,7 +24,7 @@ class FirestoreDatabase extends Database {
       handler(_FirestoreWriteBatch(db, db.batch()));
 
   @override
-  Stream<Data> stream(String path, {bool filterNull = true}) {
+  Stream<Data> stream(String path, {bool filterNull = false}) {
     return isCollection(path)
         ? db
             .collection(path)
@@ -58,13 +59,13 @@ class FirestoreDatabase extends Database {
 
   /// Creates a single document, first checking that it doesn't exist.
   @override
-  Future<void> create(Data data) => transact((tx) async {
-        if (await tx.read(data.path) == null) {
-          tx.write(data);
-        } else {
-          throw Exception('Data already exists at ${data.path}');
-        }
-      });
+  Future<void> create(Data data) async {
+    if (await exists(data.path)) {
+      throw Exception('Data already exists at ${data.path}');
+    } else {
+      write(data);
+    }
+  }
 
   /// Deletes an entire document.
   @override

@@ -12,21 +12,24 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: appName,
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: HomePage(),
-    );
+        title: appName,
+        theme: ThemeData(
+          // This is the theme of your application.
+          //
+          // Try running your application with "flutter run". You'll see the
+          // application has a blue toolbar. Then, without quitting the app, try
+          // changing the primarySwatch below to Colors.green and then invoke
+          // "hot reload" (press "r" in the console where you ran "flutter run",
+          // or simply save your changes to "hot reload" in a Flutter IDE).
+          // Notice that the counter didn't reset back to zero; the application
+          // is not restarted.
+          primarySwatch: Colors.blue,
+        ),
+        home: HomePage(),
+        routes: {
+          'firestore': (context) =>  TestPage(FirestoreDatabase()),
+          'realtime': (context) => TestPage(RealTimeDatabase()),
+        });
   }
 }
 
@@ -34,12 +37,30 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(title: Text(appName)),
+        body: Center(
+          child: Column(
+            children: <Widget>[
+              MyButton('Test with Firestore',
+                  () => Navigator.of(context).pushNamed('firestore')),
+              MyButton('Test with Realtime DB',
+                  () => Navigator.of(context).pushNamed('realtime')),
+            ],
+          ),
+        ));
+  }
+}
+
+class TestPage extends StatelessWidget {
+  const TestPage(this.db);
+  final Database db;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
       appBar: AppBar(title: Text(appName)),
       body: Builder(
         builder: (context) {
-          return ListView(
-            children: <Widget>[],
-          );
+          return SingleChildScrollView(child: DatabaseTester(db));
         },
       ),
     );
@@ -90,16 +111,22 @@ class _DatabaseTesterState extends State<DatabaseTester> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             MyButton('Create', () {
-              id = db.generateId(basePath);
+              if (currentData == null) {
+                id = db.generateId(basePath);
+              }
               clearError();
               db
                   .create(Data(path, {'created': db.serverTimestamp}))
-                  .catchError(onError);
+                  .catchError((e) {
+                id = db.generateId(basePath);
+                onError(e);
+              });
             }),
             MyButton('Read', () {
               clearError();
@@ -173,17 +200,20 @@ class _DatabaseTesterState extends State<DatabaseTester> {
             }),
           ],
         ),
-        Text(error),
+        if (error.isNotEmpty)
+          Container(
+              child: Text(error),
+              color: Colors.amber[200],
+              padding: EdgeInsets.all(8)),
         if (id != null) DataView('Document $id:', db.stream(path)),
         DataView('All test documents:', db.stream(basePath))
       ],
     );
   }
 
-  void showData(Data data) => showMsg(json.encode('${data.value}'));
-  void showMsg(msg) => Scaffold.of(context).showSnackBar(SnackBar(
-        content: Text('$msg'),
-      ));
+  void showData(Data data) => showMsg(data.value);
+  void showMsg(msg) =>
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text('$msg')));
 
   void clearError() => setState(() => error = '');
   void onError(e) => setState(() => error = '$e');
@@ -195,10 +225,7 @@ class MyButton extends StatelessWidget {
   final VoidCallback onPressed;
   @override
   Widget build(BuildContext context) {
-    return RaisedButton(
-      child: Text(label),
-      onPressed: onPressed,
-    );
+    return RaisedButton(child: Text(label), onPressed: onPressed);
   }
 }
 
@@ -209,18 +236,23 @@ class DataView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(label),
+          Text(label,
+              style: TextStyle(height: 1.5, fontWeight: FontWeight.w500)),
           StreamBuilder<Data>(
             stream: stream,
             builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.done) {
+              if (snap.hasData) {
                 return Text(
-                  json.encode(snap.data.value),
+                  JsonEncoder.withIndent('  ', (value) => '$value')
+                      .convert(snap.data.value),
                   softWrap: true,
                 );
+              } else if (snap.hasError) {
+                return Text('${snap.error}');
               } else {
                 return Center(child: CircularProgressIndicator());
               }

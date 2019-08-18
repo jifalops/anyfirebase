@@ -22,12 +22,10 @@ abstract class Database implements _BasicOperations {
   Future<bool> exists(String path) async => (await read(path)).value != null;
 
   /// Create data where none exists.
-  ///
-  /// **This will run a transaction to check for existance first.**
   Future<void> create(Data data);
 
   /// Be notified and react to data changes.
-  Stream<Data> stream(String path, {bool filterNull = true});
+  Stream<Data> stream(String path, {bool filterNull = false});
 
   // /// Run a transaction. All reads must be performed before any writes.
   // Future<void> transact(TransactionHandler handler,
