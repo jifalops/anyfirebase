@@ -40,28 +40,40 @@ abstract class Database implements _BasicOperations {
   /// A value that will be converted into the server's timestamp when written.
   dynamic get serverTimestamp;
 
-  /// Remove any leading or trailing slash.
+  /// Remove any leading, trailing or repeated slashes.
   static String normalize(String path) {
     if (path.startsWith(pathSep)) path = path.substring(1);
     if (path.endsWith(pathSep)) path = path.substring(0, path.length - 1);
-    return path;
+    return path.replaceAll(_multiSep, pathSep);
   }
+
+  static final _multiSep = RegExp('$pathSep+');
 
   /// Split a path into parts, after calling [Database.normalize(path)].
   static List<String> splitPath(String path) => normalize(path).split(pathSep);
+
+  static String idOf(String path) {
+    path = normalize(path);
+    return path.substring(path.lastIndexOf(pathSep) + 1);
+  }
+
+  static String parentOf(String path) {
+    path = normalize(path);
+    return path.substring(0, path.lastIndexOf(pathSep));
+  }
 
   static const pathSep = '/';
 }
 
 /// Data at a database location.
 class Data {
-  const Data(this.path, this.value);
+  Data(String path, this.value) : path = Database.normalize(path);
 
   /// May be `null`.
   final Map<String, dynamic> value;
   final String path;
-  String get id => path.substring(path.lastIndexOf(Database.pathSep) + 1);
-  String get parent => path.substring(0, path.lastIndexOf(Database.pathSep));
+  String get id => Database.idOf(path);
+  String get parent => Database.parentOf(path);
 }
 
 /// All reads must be done before any writes.
