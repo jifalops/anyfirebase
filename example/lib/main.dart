@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:anyfirebase/anyfirebase.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 const appName = 'anyfirebase demo';
+
+FirebaseAuth get auth => FirebaseAuth.instance;
 
 void main() => runApp(MyApp());
 
@@ -27,7 +30,7 @@ class MyApp extends StatelessWidget {
         ),
         home: HomePage(),
         routes: {
-          'firestore': (context) =>  TestPage(FirestoreDatabase()),
+          'firestore': (context) => TestPage(FirestoreDatabase()),
           'realtime': (context) => TestPage(RealtimeDatabase()),
         });
   }
@@ -79,6 +82,7 @@ class _DatabaseTesterState extends State<DatabaseTester> {
   static const String basePath = 'tests';
   String error = '';
   String id;
+  DatabaseProfileData profileData;
 
   Data currentData;
   StreamSubscription currentDataSubscription;
@@ -200,11 +204,93 @@ class _DatabaseTesterState extends State<DatabaseTester> {
             }),
           ],
         ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            MyButton('Sign in', () {
+              clearError();
+              auth.signInAnonymously().catchError(onError).then(showMsg);
+            }),
+            MyButton('Sign out', () {
+              clearError();
+              auth.signOut().catchError(onError).then(showMsg);
+            }),
+          ],
+        ),
+        Text('Profile'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            MyButton('Create', () async {
+              clearError();
+              final user = await auth.currentUser();
+              if (user != null) {
+                final profile = DatabaseProfile(db, 'profiles/${user.uid}');
+                profile
+                    .create(DatabaseProfileData.fromUser(user))
+                    .catchError(onError)
+                    .then(showMsg);
+              } else {
+                showMsg('No user');
+              }
+            }),
+            MyButton('Update', () async {
+              clearError();
+              final user = await auth.currentUser();
+              if (user != null) {
+                final profile = DatabaseProfile(db, 'profiles/${user.uid}');
+                profile
+                    .updateDisplayName('John Doe')
+                    .catchError(onError)
+                    .then(showMsg);
+                profile
+                    .updatephotoUrl(
+                        'https://docs.substance3d.com/download/thumbnails/166363379/floodrandomcolor_ex2.png')
+                    .catchError(onError)
+                    .then(showMsg);
+              } else {
+                showMsg('No user');
+              }
+            }),
+            MyButton('Read', () async {
+              clearError();
+              final user = await auth.currentUser();
+              if (user != null) {
+                final profile = DatabaseProfile(db, 'profiles/${user.uid}');
+                profile.stream.first.catchError(onError).then((data) {
+                  setState(() => profileData = data);
+                  showMsg('Profile: $profile, Data: $data');
+                });
+              } else {
+                showMsg('No user');
+              }
+            }),
+            MyButton('Delete', () async {
+              clearError();
+              final user = await auth.currentUser();
+              if (user != null) {
+                final profile = DatabaseProfile(db, 'profiles/${user.uid}');
+                profile.delete().catchError(onError).then(showMsg);
+              } else {
+                showMsg('No user');
+              }
+            }),
+          ],
+        ),
         if (error.isNotEmpty)
           Container(
               child: Text(error),
               color: Colors.amber[200],
               padding: EdgeInsets.all(8)),
+        if (profileData != null)
+          Center(
+            child: Column(
+              children: <Widget>[
+                Image.network(profileData.photoUrl, height: 64, width: 64),
+                Text(profileData.displayName)
+              ],
+            ),
+          ),
         if (id != null) DataView('Document $id:', db.stream(path)),
         DataView('All test documents:', db.stream(basePath))
       ],

@@ -28,6 +28,9 @@ class DatabaseProfile {
   Future<void> updatephotoUrl(String photoUrl) =>
       _db.update(Data(_path, {'photoUrl': photoUrl}));
 
+  @override
+  String toString() => '$runtimeType at "$_path" in a ${_db.runtimeType}';
+
   bool operator ==(o) =>
       o is DatabaseProfile && _db == o?._db && _path == o?._path;
   int get hashCode => hash2(_db, _path);
@@ -46,6 +49,9 @@ class DatabaseProfileData {
 
   final String displayName;
   final String photoUrl;
+
+  @override
+  String toString() => toJson().toString();
 
   bool operator ==(o) =>
       o is DatabaseProfileData &&
