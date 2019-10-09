@@ -4,8 +4,8 @@ import 'database.dart';
 Map<String, dynamic> _cast(dynamic value) =>
     value == null ? null : Map<String, dynamic>.from(value);
 
-class RealTimeDatabase extends Database {
-  const RealTimeDatabase();
+class RealtimeDatabase extends Database {
+  const RealtimeDatabase();
 
   @override
   rt.DatabaseReference get db => rt.FirebaseDatabase.instance.reference();
@@ -91,6 +91,8 @@ class _RtdbWriteBatch extends WriteBatch {
   @override
   void update(Data data) => _updates[data.path] = data.value;
 
+  /// Alias for [update()] because of potential performance issues.
+  ///
   /// TODO: The real-time database doesn't actually support this unless [commit()]
   /// creates a transaction. But, the transaction would read the data at the
   /// lowest common denominator path of the batch writes. If the writes don't

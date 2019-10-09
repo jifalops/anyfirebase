@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         home: HomePage(),
         routes: {
           'firestore': (context) =>  TestPage(FirestoreDatabase()),
-          'realtime': (context) => TestPage(RealTimeDatabase()),
+          'realtime': (context) => TestPage(RealtimeDatabase()),
         });
   }
 }
@@ -187,8 +187,8 @@ class _DatabaseTesterState extends State<DatabaseTester> {
                   tx.delete(path);
                   tx.write(data..value.addAll({'txWrite': db.serverTimestamp}));
                 }).catchError(onError);
-              } else if (db is RealTimeDatabase) {
-                (db as RealTimeDatabase).transact(path, (data) async {
+              } else if (db is RealtimeDatabase) {
+                (db as RealtimeDatabase).transact(path, (data) async {
                   data.value['txChanged'] = db.serverTimestamp;
                   data.value['created'] = null;
                   return data;
