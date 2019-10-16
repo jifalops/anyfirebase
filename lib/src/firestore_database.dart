@@ -9,8 +9,9 @@ class FirestoreDatabase extends Database {
 
   /// Does not work with collections.
   @override
-  Future<void> write(Data data, {bool merge = false}) =>
-      db.document(data.path).setData(data.value, merge: merge);
+  Future<void> write(String path, Map<String, dynamic> data,
+          {bool merge = false}) =>
+      db.document(path).setData(data, merge: merge);
 
   /// Read and write across documents atomically.
   Future<void> transact(TransactionHandler handler,
@@ -24,46 +25,40 @@ class FirestoreDatabase extends Database {
       handler(_FirestoreWriteBatch(db, db.batch()));
 
   @override
-  Stream<Data> stream(String path, {bool filterNull = false}) {
+  Stream<Map<String, dynamic>> stream(String path, {bool filterNull = false}) {
     return isCollection(path)
-        ? db
-            .collection(path)
-            .snapshots()
-            .map((snap) => Data(path, collectionData(snap)))
+        ? db.collection(path).snapshots().map((snap) => collectionData(snap))
         : filterNull
             ? db
                 .document(path)
                 .snapshots()
                 .where((snap) => snap.data != null)
-                .map((snap) => Data(path, snap.data))
-            : db
-                .document(path)
-                .snapshots()
-                .map((snap) => Data(path, snap.data));
+                .map((snap) => snap.data)
+            : db.document(path).snapshots().map((snap) => snap.data);
   }
 
   @override
-  Future<Data> read(String path) async {
+  Future<Map<String, dynamic>> read(String path) async {
     if (isCollection(path)) {
       final snap = await db.collection(path).getDocuments();
-      return Data(path, collectionData(snap));
+      return collectionData(snap);
     } else {
-      return Data(path, (await db.document(path).get()).data);
+      return (await db.document(path).get()).data;
     }
   }
 
   /// Update a single document.
   @override
-  Future<void> update(Data valuesToUpdate) =>
-      db.document(valuesToUpdate.path).updateData(valuesToUpdate.value);
+  Future<void> update(String path, Map<String, dynamic> valuesToUpdate) =>
+      db.document(path).updateData(valuesToUpdate);
 
   /// Creates a single document, first checking that it doesn't exist.
   @override
-  Future<void> create(Data data) async {
-    if (await exists(data.path)) {
-      throw Exception('Data already exists at ${data.path}');
+  Future<void> create(String path, Map<String, dynamic> data) async {
+    if (await exists(path)) {
+      throw Exception('Data already exists at $path');
     } else {
-      write(data);
+      write(path, data);
     }
   }
 
@@ -77,8 +72,7 @@ class FirestoreDatabase extends Database {
   @override
   get serverTimestamp => fs.FieldValue.serverTimestamp();
 
-  static bool isCollection(String path) =>
-      Database.splitPath(path).length.isOdd;
+  static bool isCollection(String path) => Database.split(path).length.isOdd;
 
   static Map<String, dynamic> collectionData(fs.QuerySnapshot snap) =>
       snap.documents
@@ -95,15 +89,16 @@ class _FirestoreTransaction extends Transaction {
   Future<void> delete(String path) => tx.delete(db.document(path));
 
   @override
-  Future<Data> read(String path) async =>
-      Data(path, (await tx.get(db.document(path))).data);
+  Future<Map<String, dynamic>> read(String path) async =>
+      (await tx.get(db.document(path))).data;
 
   @override
-  Future<void> update(Data data) =>
-      tx.update(db.document(data.path), data.value);
+  Future<void> update(String path, Map<String, dynamic> data) =>
+      tx.update(db.document(path), data);
 
   @override
-  Future<void> write(Data data) => tx.set(db.document(data.path), data.value);
+  Future<void> write(String path, Map<String, dynamic> data) =>
+      tx.set(db.document(path), data);
 }
 
 class _FirestoreWriteBatch extends WriteBatch {
@@ -118,10 +113,10 @@ class _FirestoreWriteBatch extends WriteBatch {
   void delete(String path) => batch.delete(db.document(path));
 
   @override
-  void update(Data data) =>
-      batch.updateData(db.document(data.path), data.value);
+  void update(String path, Map<String, dynamic> data) =>
+      batch.updateData(db.document(path), data);
 
   @override
-  void write(Data data, {bool merge = false}) =>
-      batch.setData(db.document(data.path), data.value, merge: merge);
+  void write(String path, Map<String, dynamic> data, {bool merge = false}) =>
+      batch.setData(db.document(path), data, merge: merge);
 }

@@ -14,6 +14,7 @@ dependencies:
   firebase_database:
   firebase_auth:
   json_annotation:
+  rxdart:
 
 dev_dependencies:
   flutter_test:
