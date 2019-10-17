@@ -1,5 +1,3 @@
-
-
 abstract class _BasicOperations {
   /// Read the data at [path] once.
   Future<Map<String, dynamic>> read(String path);
@@ -27,20 +25,28 @@ abstract class Database implements _BasicOperations {
   Future<void> create(String path, Map<String, dynamic> data);
 
   /// Be notified and react to data changes.
-  Stream<Map<String, dynamic>> stream(String path, {bool filterNull = false});
+  Stream<Map<String, dynamic>> stream(String path);
 
   // /// Run a transaction. All reads must be performed before any writes.
   // Future<void> transact(TransactionHandler handler,
   //     {Duration timeout = const Duration(seconds: 5)});
 
   /// Write to various locations atomically (offline friendly).
-  Future<void> batchWrite(BatchHandler handler);
+  // Future<void> batchWrite(BatchHandler handler);
 
   /// Generate a new ID or key to be used at [path].
   String generateId(String path);
 
   /// A value that will be converted into the server's timestamp when written.
   dynamic get serverTimestamp;
+
+  static DateTime parseTimestamp(dynamic timestamp) {
+    return timestamp == null
+        ? null
+        : timestamp is int
+            ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+            : timestamp is String ? DateTime.tryParse(timestamp) : null;
+  }
 
   /// Remove any leading, trailing or repeated slashes.
   static String normalize(String path) {
@@ -62,9 +68,11 @@ abstract class Database implements _BasicOperations {
   static String pathSep = '/';
 }
 
+/// Used by Firestore only.
 /// All reads must be done before any writes.
 abstract class Transaction implements _BasicOperations {}
 
+/// Used by Firestore only.
 abstract class WriteBatch {
   Future<void> commit();
 
@@ -75,7 +83,7 @@ abstract class WriteBatch {
   void delete(String path);
 
   /// Create or overwrite.
-  void write(String path, Map<String, dynamic> data);
+  void write(String path, Map<String, dynamic> data, {bool merge = false});
 }
 
 typedef TransactionHandler = Future<void> Function(Transaction);

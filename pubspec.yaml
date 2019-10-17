@@ -12,15 +12,10 @@ dependencies:
     sdk: flutter
   cloud_firestore:
   firebase_database:
-  firebase_auth:
-  json_annotation:
-  rxdart:
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  build_runner:
-  json_serializable:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

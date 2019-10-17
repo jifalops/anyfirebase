@@ -20,21 +20,19 @@ class FirestoreDatabase extends Database {
           (tx) async => await handler(_FirestoreTransaction(db, tx)),
           timeout: timeout);
 
-  @override
   Future<void> batchWrite(BatchHandler handler) =>
       handler(_FirestoreWriteBatch(db, db.batch()));
 
   @override
-  Stream<Map<String, dynamic>> stream(String path, {bool filterNull = false}) {
+  Stream<Map<String, dynamic>> stream(String path) {
     return isCollection(path)
         ? db.collection(path).snapshots().map((snap) => collectionData(snap))
-        : filterNull
-            ? db
-                .document(path)
-                .snapshots()
-                .where((snap) => snap.data != null)
-                .map((snap) => snap.data)
-            : db.document(path).snapshots().map((snap) => snap.data);
+        : db.document(path).snapshots().map((snap) => snap.data);
+  }
+
+  DocStreamer streamWithSubcollections(
+      String path, Iterable<String> subcollections) {
+    return DocStreamer(this, path, subcollections);
   }
 
   @override
@@ -119,4 +117,13 @@ class _FirestoreWriteBatch extends WriteBatch {
   @override
   void write(String path, Map<String, dynamic> data, {bool merge = false}) =>
       batch.setData(db.document(path), data, merge: merge);
+}
+
+class DocStreamer {
+  DocStreamer(FirestoreDatabase db, String path, Iterable<String> collections)
+      : doc = db.stream(path),
+        collections = Map.fromIterable(collections,
+            value: (item) => db.stream('$path/$item'));
+  final Stream<Map<String, dynamic>> doc;
+  final Map<String, Stream<Map<String, dynamic>>> collections;
 }
