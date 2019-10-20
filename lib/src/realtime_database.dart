@@ -66,7 +66,7 @@ class RealtimeDatabase extends Database {
     } else if (result.committed == false) {
       throw Exception('Transaction failed');
     } else {
-      return result.dataSnapshot.value;
+      return _cast(result.dataSnapshot.value);
     }
   }
 
