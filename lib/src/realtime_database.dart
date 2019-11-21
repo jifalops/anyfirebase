@@ -64,7 +64,7 @@ class RealtimeDatabase extends Database {
     if (result.error != null) {
       throw result.error;
     } else if (result.committed == false) {
-      throw Exception('Transaction failed');
+      // throw Exception('Transaction failed');
     } else {
       return _cast(result.dataSnapshot.value);
     }
@@ -81,7 +81,7 @@ class RealtimeDatabase extends Database {
     if (result.error != null) {
       throw result.error;
     } else if (result.committed == false) {
-      throw Exception('Transaction failed');
+      // throw Exception('Transaction failed');
     } else {
       return result.dataSnapshot.value;
     }
@@ -95,5 +95,8 @@ class RealtimeDatabase extends Database {
       db.child(path).set(value);
 }
 
-Map<String, dynamic> _cast(dynamic value) =>
-    value == null ? null : Map<String, dynamic>.from(value);
+// Map<String, dynamic> _cast(Map value) =>
+//     value == null ? null : Map<String, dynamic>.from(value);
+
+Map<String, dynamic> _cast(Map value) =>
+    value.map((k, v) => MapEntry('$k', v is Map ? _cast(v) : v));

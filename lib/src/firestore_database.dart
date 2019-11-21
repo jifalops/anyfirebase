@@ -119,6 +119,7 @@ class _FirestoreWriteBatch extends WriteBatch {
       batch.setData(db.document(path), data, merge: merge);
 }
 
+/// Holds the streams of a document and its subcollections.
 class DocStreamer {
   DocStreamer(FirestoreDatabase db, String path, Iterable<String> collections)
       : doc = db.stream(path),
