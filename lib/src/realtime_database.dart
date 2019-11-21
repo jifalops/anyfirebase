@@ -53,6 +53,7 @@ class RealtimeDatabase extends Database {
   @override
   get serverTimestamp => rt.ServerValue.timestamp;
 
+  /// [handler] may be called multiple times, including with `null` data.
   Future<Map<String, dynamic>> transact(String path,
       Future<Map<String, dynamic>> Function(Map<String, dynamic>) handler,
       {Duration timeout = const Duration(seconds: 5)}) async {
@@ -63,13 +64,15 @@ class RealtimeDatabase extends Database {
     }, timeout: timeout);
     if (result.error != null) {
       throw result.error;
-    } else if (result.committed == false) {
-      // throw Exception('Transaction failed');
     } else {
+      if (result.committed == false) {
+        // throw Exception('Transaction failed');
+      }
       return _cast(result.dataSnapshot.value);
     }
   }
 
+  /// [handler] may be called multiple times, including with `null` data.
   Future<dynamic> transactValue(
       String path, Future<dynamic> Function(dynamic) handler,
       {Duration timeout = const Duration(seconds: 5)}) async {
@@ -80,9 +83,10 @@ class RealtimeDatabase extends Database {
     }, timeout: timeout);
     if (result.error != null) {
       throw result.error;
-    } else if (result.committed == false) {
-      // throw Exception('Transaction failed');
     } else {
+      if (result.committed == false) {
+        // throw Exception('Transaction failed');
+      }
       return result.dataSnapshot.value;
     }
   }
@@ -93,10 +97,30 @@ class RealtimeDatabase extends Database {
 
   Future<void> writeValue(String path, dynamic value) =>
       db.child(path).set(value);
-}
 
-// Map<String, dynamic> _cast(Map value) =>
-//     value == null ? null : Map<String, dynamic>.from(value);
+  Future<bool> isConnected() => readValue('.info/connected');
+
+  Stream<bool> onConnectionChanged() => streamValue('.info/connected');
+
+  Future<void> writeOnDisconnect(String path, dynamic value) =>
+      db.child(path).onDisconnect().set(value);
+  Future<void> updateOnDisconnect(String path, Map<String, dynamic> value) =>
+      db.child(path).onDisconnect().update(value);
+  Future<void> removeOnDisconnect(String path) =>
+      db.child(path).onDisconnect().remove();
+  Future<void> cancelDisconnectListener(String path) =>
+      db.child(path).onDisconnect().cancel();
+
+  /// Add this value to the local device's time to get the server time (estimated).
+  ///
+  /// This can be affected by network latency and is mainly for discovering large
+  /// (> 1 second) discrepancies.
+  /// See https://firebase.google.com/docs/database/web/offline-capabilities#clock-skew
+  Future<int> clockSkew() => readValue('.info/serverTimeOffset');
+
+  /// See [clockSkew()].
+  Stream<int> onClockSkewChanged() => streamValue('.info/serverTimeOffset');
+}
 
 Map<String, dynamic> _cast(Map value) =>
     value.map((k, v) => MapEntry('$k', v is Map ? _cast(v) : v));
