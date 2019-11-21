@@ -9,7 +9,10 @@ class RealtimeDatabase extends Database {
 
   @override
   Stream<Map<String, dynamic>> stream(String path) {
-    return db.child(path).onValue.map((event) => _cast(event.snapshot.value));
+    return db
+        .child(path)
+        .onValue
+        .map((event) => _castMapDeep(event.snapshot.value));
   }
 
   Stream<dynamic> streamValue(String path) {
@@ -17,10 +20,8 @@ class RealtimeDatabase extends Database {
   }
 
   @override
-  Future<Map<String, dynamic>> read(
-    String path,
-  ) async =>
-      _cast((await db.child(path).once()).value);
+  Future<Map<String, dynamic>> read(String path) async =>
+      _castMapDeep((await db.child(path).once()).value);
 
   Future<dynamic> readValue(String path) async =>
       (await db.child(path).once()).value;
@@ -58,7 +59,7 @@ class RealtimeDatabase extends Database {
       Future<Map<String, dynamic>> Function(Map<String, dynamic>) handler,
       {Duration timeout = const Duration(seconds: 5)}) async {
     final result = await db.child(path).runTransaction((data) async {
-      final newData = await handler(_cast(data.value));
+      final newData = await handler(_castMapDeep(data.value));
       data.value = newData;
       return data;
     }, timeout: timeout);
@@ -68,7 +69,7 @@ class RealtimeDatabase extends Database {
       if (result.committed == false) {
         // throw Exception('Transaction failed');
       }
-      return _cast(result.dataSnapshot.value);
+      return _castMapDeep(result.dataSnapshot.value);
     }
   }
 
@@ -116,11 +117,13 @@ class RealtimeDatabase extends Database {
   /// This can be affected by network latency and is mainly for discovering large
   /// (> 1 second) discrepancies.
   /// See https://firebase.google.com/docs/database/web/offline-capabilities#clock-skew
+  ///
+  /// *The value may be `null`.*
   Future<int> clockSkew() => readValue('.info/serverTimeOffset');
 
   /// See [clockSkew()].
   Stream<int> onClockSkewChanged() => streamValue('.info/serverTimeOffset');
 }
 
-Map<String, dynamic> _cast(Map value) =>
-    value.map((k, v) => MapEntry('$k', v is Map ? _cast(v) : v));
+Map<String, dynamic> _castMapDeep(Map value) =>
+    value.map((k, v) => MapEntry('$k', v is Map ? _castMapDeep(v) : v));
