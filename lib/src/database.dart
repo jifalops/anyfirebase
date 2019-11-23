@@ -48,6 +48,9 @@ abstract class Database implements _BasicOperations {
             : timestamp is String ? DateTime.tryParse(timestamp) : null;
   }
 
+  static Map<String, DateTime> parseTimestamps(Map timestamps) =>
+      timestamps?.map((k, v) => MapEntry(k as String, parseTimestamp(v)));
+
   /// Remove any leading, trailing or repeated slashes.
   static String normalize(String path) {
     if (path.startsWith(pathSep)) path = path.substring(1);
