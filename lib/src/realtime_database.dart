@@ -119,10 +119,13 @@ class RealtimeDatabase extends Database {
   /// See https://firebase.google.com/docs/database/web/offline-capabilities#clock-skew
   ///
   /// *The value may be `null`.*
-  Future<int> clockSkew() => readValue('.info/serverTimeOffset');
+  Future<int> clockSkew() async =>
+      int.tryParse((await readValue('.info/serverTimeOffset'))?.toString()) ??
+      0;
 
   /// See [clockSkew()].
-  Stream<int> onClockSkewChanged() => streamValue('.info/serverTimeOffset');
+  Stream<int> onClockSkewChanged() => streamValue('.info/serverTimeOffset')
+      .map((offset) => int.tryParse('$offset') ?? 0);
 }
 
 Map<String, dynamic> _castMapDeep(Map value) =>
