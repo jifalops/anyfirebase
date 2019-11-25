@@ -117,8 +117,6 @@ class RealtimeDatabase extends Database {
   /// This can be affected by network latency and is mainly for discovering large
   /// (> 1 second) discrepancies.
   /// See https://firebase.google.com/docs/database/web/offline-capabilities#clock-skew
-  ///
-  /// *The value may be `null`.*
   Future<int> clockSkew() async =>
       int.tryParse((await readValue('.info/serverTimeOffset'))?.toString()) ??
       0;
