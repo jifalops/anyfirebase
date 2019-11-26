@@ -127,4 +127,4 @@ class RealtimeDatabase extends Database {
 }
 
 Map<String, dynamic> _castMapDeep(Map value) =>
-    value.map((k, v) => MapEntry('$k', v is Map ? _castMapDeep(v) : v));
+    value?.map((k, v) => MapEntry('$k', v is Map ? _castMapDeep(v) : v));
