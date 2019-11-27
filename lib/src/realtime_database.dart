@@ -117,13 +117,12 @@ class RealtimeDatabase extends Database {
   /// This can be affected by network latency and is mainly for discovering large
   /// (> 1 second) discrepancies.
   /// See https://firebase.google.com/docs/database/web/offline-capabilities#clock-skew
-  Future<int> clockSkew() async =>
-      int.tryParse((await readValue('.info/serverTimeOffset'))?.toString()) ??
-      0;
+  Future<int> clockSkew() async => int.tryParse(
+      (await readValue('.info/serverTimeOffset'))?.toString() ?? '0');
 
   /// See [clockSkew()].
   Stream<int> onClockSkewChanged() => streamValue('.info/serverTimeOffset')
-      .map((offset) => int.tryParse('$offset') ?? 0);
+      .map((offset) => int.tryParse('${offset ?? 0}'));
 }
 
 Map<String, dynamic> _castMapDeep(Map value) =>
