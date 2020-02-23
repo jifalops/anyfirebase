@@ -99,9 +99,11 @@ class RealtimeDatabase extends Database {
   Future<void> writeValue(String path, dynamic value) =>
       db.child(path).set(value);
 
-  Future<bool> isConnected() => readValue('.info/connected');
+  Future<bool> isConnected() async =>
+      (await readValue('.info/connected')) as bool;
 
-  Stream<bool> onConnectionChanged() => streamValue('.info/connected');
+  Stream<bool> onConnectionChanged() =>
+      streamValue('.info/connected').map((event) => event as bool);
 
   Future<void> writeOnDisconnect(String path, dynamic value) =>
       db.child(path).onDisconnect().set(value);
